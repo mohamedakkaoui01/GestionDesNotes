@@ -1,0 +1,6 @@
+@import "../common.css";
+
+/* General Layout */
+.subjects-management {
+  composes: management-page;
+}

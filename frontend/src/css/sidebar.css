@@ -1,0 +1,95 @@
+.sidebar {
+  width: 240px;
+  background: linear-gradient(to bottom, #2e3b4e, #243447);
+  color: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid #444;
+}
+
+.sidebar-header h2 {
+  color: #8888ff;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.sidebar-user-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.sidebar-role {
+  font-size: 0.8rem;
+  color: #ccc;
+  margin-top: 4px;
+}
+
+.sidebar-menu {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+}
+
+.sidebar-link {
+  padding: 12px 20px;
+  text-decoration: none;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out, padding-left 0.2s ease-in-out;
+  font-size: 15px;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+  background: linear-gradient(to right, #8888ff, #8753c6);
+  font-weight: bold;
+  padding-left: 24px;
+  border-left: 3px solid #cfcfff;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid #444;
+}
+
+.sidebar-footer button {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: transparent;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.sidebar-footer button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Optional: improve scroll handling if needed */
+.sidebar-menu {
+  overflow-y: auto;
+  max-height: calc(100vh - 180px); /* Adjust if you change header/footer */
+}
+
+/* Add padding to the main content to avoid being hidden under the fixed sidebar */
+@media (min-width: 700px) {
+  .main-content-with-sidebar {
+    margin-left: 240px;
+  }
+}

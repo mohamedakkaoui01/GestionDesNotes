@@ -1,0 +1,6 @@
+@import "../common.css";
+
+/* General Layout */
+.classes-management {
+  composes: management-page;
+}
