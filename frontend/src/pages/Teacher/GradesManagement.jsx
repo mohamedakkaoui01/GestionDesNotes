@@ -481,8 +481,8 @@ function GradesManagement() {
                 value={formData.grade}
                 onChange={handleFormChange}
                 min="0"
-                max="14.99"
-                step="0.01"
+                max="20"
+                step="any"
                 required
                 disabled={isSubmitting}
               />
