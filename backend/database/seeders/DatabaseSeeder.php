@@ -12,6 +12,7 @@ use App\Models\Student;
 use App\Models\Grade;
 use Illuminate\Support\Facades\Hash;
 use Faker\Factory as Faker;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -184,6 +185,14 @@ class DatabaseSeeder extends Seeder
                         foreach ($this->classes as $class) {
                             // Only assign subjects to appropriate classes
                             if ($this->isSubjectSuitableForClass($this->subjects[$subjectIndex], $class)) {
+                                // Check if any teacher is already assigned to this subject/class
+                                $alreadyAssigned = DB::table('teacher_subject')
+                                    ->where('subject_id', $this->subjects[$subjectIndex]->id)
+                                    ->where('class_id', $class->id)
+                                    ->exists();
+                                if ($alreadyAssigned) {
+                                    continue; // Skip if already assigned
+                                }
                                 try {
                                     $teacher->subjects()->attach($this->subjects[$subjectIndex]->id, [
                                         'class_id' => $class->id
@@ -261,34 +270,28 @@ class DatabaseSeeder extends Seeder
 
     private function createGrades()
     {
-        $gradingPeriods = ['1er Trimestre', '2ème Trimestre', '3ème Trimestre'];
+        $gradingPeriods = ['CC1', 'CC2', 'CC3', 'Exam final'];
         $evaluationTypes = ['Devoir', 'Contrôle', 'Examen', 'Projet'];
         
         foreach ($this->students as $student) {
-            // Get all subjects for the student's class
+            // Get all teachers/subjects assigned to the student's class
             $classSubjects = [];
-            
             foreach ($this->teachers as $teacher) {
                 $teacherSubjects = $teacher->subjects()
                     ->wherePivot('class_id', $student->class_id)
                     ->get();
-                
                 foreach ($teacherSubjects as $subject) {
-                    if (!in_array($subject->id, array_column($classSubjects, 'id'))) {
-                        $classSubjects[] = [
-                            'subject' => $subject,
-                            'teacher' => $teacher
-                        ];
-                    }
+                    $classSubjects[] = [
+                        'subject' => $subject,
+                        'teacher' => $teacher
+                    ];
                 }
             }
-            
             // Create 2-4 grades per subject per student
             foreach ($classSubjects as $classSubject) {
                 $subject = $classSubject['subject'];
                 $teacher = $classSubject['teacher'];
                 $gradeCount = $this->faker->numberBetween(2, 4);
-                
                 for ($i = 0; $i < $gradeCount; $i++) {
                     try {
                         Grade::create([
@@ -302,7 +305,6 @@ class DatabaseSeeder extends Seeder
                             'updated_at' => now(),
                         ]);
                     } catch (\Exception $e) {
-                        // Skip on error
                         continue;
                     }
                 }

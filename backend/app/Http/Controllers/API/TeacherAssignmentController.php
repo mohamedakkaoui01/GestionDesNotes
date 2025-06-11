@@ -23,14 +23,25 @@ class TeacherAssignmentController extends Controller
         
         $teacher = Teacher::findOrFail($request->teacher_id);
         
-        // Verifier si l'enseignant est déjà assigné à cette matière dans cette classe
+        // Check if any teacher is already assigned to this subject in this class
+        $existingAssignment = DB::table('teacher_subject')
+            ->where('subject_id', $request->subject_id)
+            ->where('class_id', $request->class_id)
+            ->first();
+        
+        if ($existingAssignment) {
+            return response()->json([
+                'message' => 'Cette matière est déjà enseignée par un autre professeur dans cette classe'
+            ], 422);
+        }
+        
+        // Check if this specific teacher is already assigned
         $exists = $teacher->subjects()
             ->wherePivot('subject_id', $request->subject_id)
             ->wherePivot('class_id', $request->class_id)
             ->exists();
         
         if ($exists) {
-            // Just return success, don't error
             return response()->json([
                 'message' => 'Enseignant déjà assigné à cette matière dans cette classe'
             ], 200);
@@ -182,6 +193,8 @@ class TeacherAssignmentController extends Controller
         $assignments = collect($request->assignments);
         $grouped = $assignments->groupBy('teacher_id');
 
+        $errors = [];
+
         foreach ($grouped as $teacherId => $teacherAssignments) {
             $teacher = \App\Models\Teacher::find($teacherId);
 
@@ -221,12 +234,25 @@ class TeacherAssignmentController extends Controller
                 })->toArray();
 
             foreach ($teacherAssignments as $a) {
+                // Check if any teacher is already assigned to this subject in this class
+                $alreadyAssigned = DB::table('teacher_subject')
+                    ->where('subject_id', $a['subject_id'])
+                    ->where('class_id', $a['class_id'])
+                    ->exists();
+                if ($alreadyAssigned) {
+                    $errors[] = 'Cette matière est déjà enseignée dans une autre classe';
+                    continue;
+                }
                 $key = $a['subject_id'] . '-' . $a['class_id'];
                 if (!in_array($key, $existing)) {
                     $teacher->subjects()->attach($a['subject_id'], ['class_id' => $a['class_id']]);
                     $existing[] = $key;
                 }
             }
+        }
+
+        if (!empty($errors)) {
+            return response()->json(['message' => 'Certaines assignations ont échoué.', 'errors' => $errors], 422);
         }
 
         return response()->json(['message' => 'Batch assignment processed.'], 200);

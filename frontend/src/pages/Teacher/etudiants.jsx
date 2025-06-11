@@ -110,16 +110,34 @@ function BulletinScolaire() {
     }
   }, [selectedClassId, selectedSubjectId, selectedYear]);
 
+  // Add debugging logs before calculateAverages
+  console.log("Students array:", students);
+  console.log("Grades array:", grades);
+  console.log(
+    "Student IDs:",
+    students.map((s) => s.id)
+  );
+  console.log(
+    "Grade student_ids:",
+    grades.map((g) => g.student_id)
+  );
+
   // Calculate student averages
   const calculateAverages = useCallback(() => {
     const studentGrades = {};
 
     grades.forEach((grade) => {
+      const foundStudent = students.find(
+        (s) => String(s.id) === String(grade.student_id)
+      );
+      if (!foundStudent) {
+        console.warn("No student found for grade:", grade);
+      } else if (!foundStudent.user || !foundStudent.user.name) {
+        console.warn("Student found but no user name:", foundStudent);
+      }
       if (!studentGrades[grade.student_id]) {
         studentGrades[grade.student_id] = {
-          name:
-            students.find((s) => s.id === grade.student_id)?.user?.name ||
-            "Inconnu",
+          name: foundStudent?.user?.name || "Inconnu",
           cc1: null,
           cc2: null,
           cc3: null,
@@ -128,13 +146,16 @@ function BulletinScolaire() {
       }
 
       // Map grade types to their values
-      if (grade.type === "CC1")
+      if (grade.grading_period === "CC1")
         studentGrades[grade.student_id].cc1 = parseFloat(grade.grade);
-      else if (grade.type === "CC2")
+      else if (grade.grading_period === "CC2")
         studentGrades[grade.student_id].cc2 = parseFloat(grade.grade);
-      else if (grade.type === "CC3")
+      else if (grade.grading_period === "CC3")
         studentGrades[grade.student_id].cc3 = parseFloat(grade.grade);
-      else if (grade.type === "EXAM")
+      else if (
+        grade.grading_period === "Exam final" ||
+        grade.grading_period === "EXAM"
+      )
         studentGrades[grade.student_id].exam = parseFloat(grade.grade);
     });
 

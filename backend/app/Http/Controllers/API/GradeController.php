@@ -44,6 +44,21 @@ class GradeController extends Controller
         
         $grades = $query->orderBy('created_at', 'desc')->paginate(15);
         
+        // Map grades to include grading_period explicitly
+        $grades->getCollection()->transform(function ($grade) {
+            return [
+                'id' => $grade->id,
+                'student' => $grade->student,
+                'teacher' => $grade->teacher,
+                'subject' => $grade->subject,
+                'academic_year' => $grade->academicYear,
+                'grade' => $grade->grade,
+                'grading_period' => $grade->grading_period,
+                'created_at' => $grade->created_at,
+                'updated_at' => $grade->updated_at,
+            ];
+        });
+        
         return response()->json($grades);
     }
 

@@ -144,11 +144,20 @@ function Bulletin() {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setGrades(gradesResponse.data.data);
-        setAverages(averagesResponse.data);
+        if (gradesResponse.data && gradesResponse.data.data) {
+          setGrades(gradesResponse.data.data);
+        } else {
+          setError("Format de données de notes invalide");
+        }
+        if (averagesResponse.data) {
+          setAverages(averagesResponse.data);
+        } else {
+          setError("Format de données de moyennes invalide");
+        }
       } catch (err) {
-        setError("Erreur lors du chargement des notes");
-        console.error(err);
+        setError(
+          err.response?.data?.message || "Erreur lors du chargement des notes"
+        );
       } finally {
         setLoading(false);
       }
@@ -165,6 +174,9 @@ function Bulletin() {
 
   // Group grades by subject and period using grading_period from API
   const gradesBySubject = grades.reduce((acc, grade) => {
+    if (!grade || !grade.subject) {
+      return acc;
+    }
     const subjectId = grade.subject.id;
     if (!acc[subjectId]) {
       acc[subjectId] = {

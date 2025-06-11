@@ -413,6 +413,13 @@ function TeachersManagement() {
     } catch (error) {
       let backendMsg =
         error.response?.data?.message || error.response?.data?.error;
+      // Handle batch assignment errors (array)
+      if (
+        error.response?.data?.errors &&
+        Array.isArray(error.response.data.errors)
+      ) {
+        backendMsg += "\n" + error.response.data.errors.join("\n");
+      }
       if (
         !backendMsg &&
         error.response?.data &&
