@@ -138,6 +138,8 @@ table {
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(123, 47, 247, 0.08);
+  table-layout: fixed;
+  max-width: 100%;
 }
 th,
 td {
@@ -319,6 +321,16 @@ tr td:last-child {
   transform: scale(1.08);
 }
 
+.icon-btn-small.add {
+  color: #fff;
+  background: linear-gradient(135deg, #36d1c4, #1e90ff);
+}
+.icon-btn-small.add:hover {
+  background: linear-gradient(135deg, #1e90ff, #36d1c4);
+  box-shadow: 0 4px 12px rgba(30, 144, 255, 0.18);
+  transform: scale(1.08);
+}
+
 .grade-period-cell {
   display: flex;
   align-items: center;
@@ -392,4 +404,71 @@ tr td:last-child {
 
 .custom-radio:checked + .custom-radio-span::after {
   background: #4285f4;
+}
+
+.grade-value {
+  display: inline-block;
+  min-width: 100px; /* Adjust as needed for your largest value, e.g., "19.82/20" */
+  text-align: right;
+  font-variant-numeric: tabular-nums; /* For even spacing of numbers */
+}
+
+.period-col {
+  width: 80px;
+  max-width: 80px;
+  min-width: 60px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .grades-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .grades-table table,
+  .grades-table thead,
+  .grades-table tbody,
+  .grades-table th,
+  .grades-table td,
+  .grades-table tr {
+    display: revert;
+  }
+  .period-col {
+    min-width: 90px;
+    max-width: 120px;
+    font-size: 0.95rem;
+    padding: 0.5rem;
+  }
+  th,
+  td {
+    padding: 0.5rem;
+    font-size: 0.95rem;
+  }
+}
+
+.col-eleve {
+  width: 90px;
+  max-width: 90px;
+  min-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.col-matiere {
+  width: 90px;
+  max-width: 90px;
+  min-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.col-annee {
+  width: 70px;
+  max-width: 70px;
+  min-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

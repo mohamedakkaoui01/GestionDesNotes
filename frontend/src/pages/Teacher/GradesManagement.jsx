@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/api";
 import "../../css/TeacherCss/GradesManagement.css";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 
 function GradesManagement() {
   const [loading, setLoading] = useState(true);
@@ -368,7 +368,15 @@ function GradesManagement() {
                 value={selectedClassId}
                 onChange={(e) => setSelectedClassId(e.target.value)}
                 required
-                disabled={formMode === "edit" || isSubmitting}
+                disabled={
+                  formMode === "edit" ||
+                  isSubmitting ||
+                  (formMode === "add" &&
+                    formData.student_id &&
+                    formData.subject_id &&
+                    formData.academic_year_id &&
+                    formData.grading_period)
+                }
                 className="class-select"
               >
                 <option value="">-- Sélectionnez une classe --</option>
@@ -390,7 +398,14 @@ function GradesManagement() {
                 }}
                 required
                 disabled={
-                  !selectedClassId || formMode === "edit" || isSubmitting
+                  !selectedClassId ||
+                  formMode === "edit" ||
+                  isSubmitting ||
+                  (formMode === "add" &&
+                    formData.student_id &&
+                    formData.subject_id &&
+                    formData.academic_year_id &&
+                    formData.grading_period)
                 }
               >
                 <option value="">-- Sélectionnez une matière --</option>
@@ -429,7 +444,12 @@ function GradesManagement() {
                   !selectedClassId ||
                   !formData.subject_id ||
                   formMode === "edit" ||
-                  isSubmitting
+                  isSubmitting ||
+                  (formMode === "add" &&
+                    formData.student_id &&
+                    formData.subject_id &&
+                    formData.academic_year_id &&
+                    formData.grading_period)
                 }
               >
                 <option value="">-- Sélectionnez un élève --</option>
@@ -447,7 +467,15 @@ function GradesManagement() {
                 value={formData.academic_year_id}
                 onChange={handleFormChange}
                 required
-                disabled={formMode === "edit" || isSubmitting}
+                disabled={
+                  formMode === "edit" ||
+                  isSubmitting ||
+                  (formMode === "add" &&
+                    formData.student_id &&
+                    formData.subject_id &&
+                    formData.academic_year_id &&
+                    formData.grading_period)
+                }
               >
                 <option value="">-- Sélectionnez une année --</option>
                 {uniqueAcademicYears.map((ay) => (
@@ -589,25 +617,35 @@ function GradesManagement() {
           <table className="grades-table">
             <thead>
               <tr>
-                <th>Élève</th>
-                <th>Matière</th>
-                <th>Année</th>
+                <th className="col-eleve">Élève</th>
+                <th className="col-matiere">Matière</th>
+                <th className="col-annee">Année</th>
                 {periods.map((period) => (
-                  <th key={period}>{period}</th>
+                  <th key={period} className="period-col">
+                    {period}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((entry) => (
                 <tr key={`${entry.student?.id}-${entry.subject?.id}`}>
-                  <td>{entry.student?.user?.name || "Inconnu"}</td>
-                  <td>{entry.subject?.name || "Inconnue"}</td>
-                  <td>{entry.academic_year?.label || "Inconnue"}</td>
+                  <td className="col-eleve">
+                    {entry.student?.user?.name || "Inconnu"}
+                  </td>
+                  <td className="col-matiere">
+                    {entry.subject?.name || "Inconnue"}
+                  </td>
+                  <td className="col-annee">
+                    {entry.academic_year?.label || "Inconnue"}
+                  </td>
                   {periods.map((period) => (
-                    <td key={period}>
+                    <td key={period} className="period-col">
                       {entry.grades[period] ? (
                         <div className="grade-period-cell">
-                          <span>{entry.grades[period].grade}/20</span>
+                          <span className="grade-value">
+                            {entry.grades[period].grade}/20
+                          </span>
                           <div className="grade-period-actions">
                             <button
                               onClick={() =>
@@ -632,7 +670,27 @@ function GradesManagement() {
                           </div>
                         </div>
                       ) : (
-                        "-"
+                        <button
+                          className="icon-btn-small add"
+                          title="Ajouter"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            setShowForm(true);
+                            setFormMode("add");
+                            setEditGradeId(null);
+                            setFormData({
+                              student_id: entry.student.id.toString(),
+                              subject_id: entry.subject.id.toString(),
+                              academic_year_id:
+                                entry.academic_year.id.toString(),
+                              grade: "",
+                              grading_period: period,
+                            });
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                        >
+                          <FiPlus />
+                        </button>
                       )}
                     </td>
                   ))}

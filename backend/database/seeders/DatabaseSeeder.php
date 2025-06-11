@@ -62,17 +62,8 @@ class DatabaseSeeder extends Seeder
     {
         $classNames = [
             'Seconde Générale',
-            'Seconde Technologique',
             'Première S',
-            'Première ES',
-            'Première L',
-            'Première STI2D',
-            'Première STMG',
-            'Terminale S',
-            'Terminale ES',
-            'Terminale L',
-            'Terminale STI2D',
-            'Terminale STMG'
+            'Terminale ES'
         ];
 
         foreach ($classNames as $className) {
@@ -86,18 +77,10 @@ class DatabaseSeeder extends Seeder
     {
         $subjectNames = [
             'Mathématiques',
-            'Physique-Chimie',
-            'Sciences de la Vie et de la Terre',
             'Français',
-            'Philosophie',
-            'Histoire-Géographie',
             'Anglais',
-            'Espagnol',
-            'Éducation Physique et Sportive',
-            'Sciences Économiques et Sociales',
-            'Littérature',
-            'Sciences de l\'Ingénieur',
-            'Numérique et Sciences Informatiques',
+            'Histoire-Géographie',
+            'Sciences Économiques et Sociales'
         ];
 
         foreach ($subjectNames as $name) {
@@ -110,14 +93,11 @@ class DatabaseSeeder extends Seeder
     private function createTeachers()
     {
         $teacherData = [
-            ['Pierre', 'Dupont', ['Mathématiques', 'Physique-Chimie']],
-            ['Marie', 'Martin', ['Français', 'Philosophie']],
-            ['Jean', 'Durand', ['Histoire-Géographie', 'Enseignement Moral et Civique']],
-            ['Sophie', 'Bernard', ['Anglais', 'Espagnol']],
-            ['Thomas', 'Petit', ['Sciences de la Vie et de la Terre']],
+            ['Pierre', 'Dupont', ['Mathématiques']],
+            ['Marie', 'Martin', ['Français']],
+            ['Jean', 'Durand', ['Histoire-Géographie']],
+            ['Sophie', 'Bernard', ['Anglais']],
             ['Camille', 'Robert', ['Sciences Économiques et Sociales']],
-            ['Nicolas', 'Richard', ['Éducation Physique et Sportive']],
-            ['Laura', 'Durand', ['Sciences de l\'Ingénieur', 'Numérique et Sciences Informatiques']],
         ];
 
         foreach ($teacherData as $index => $data) {
@@ -134,11 +114,11 @@ class DatabaseSeeder extends Seeder
 
     private function createStudents()
     {
-        $firstNames = ['Lucas', 'Emma', 'Hugo', 'Léa', 'Gabriel', 'Manon', 'Raphaël', 'Chloé', 'Louis', 'Camille'];
-        $lastNames = ['Moreau', 'Laurent', 'Simon', 'Michel', 'Lefebvre', 'Leroy', 'Roux', 'Fournier', 'Morel', 'Girard'];
+        $firstNames = ['Lucas', 'Emma', 'Hugo', 'Léa', 'Gabriel'];
+        $lastNames = ['Moreau', 'Laurent', 'Simon', 'Michel', 'Lefebvre'];
 
         foreach ($this->classes as $class) {
-            $studentCount = $this->faker->numberBetween(15, 30);
+            $studentCount = 5; // Fixed number of students per class
             
             for ($i = 0; $i < $studentCount; $i++) {
                 $firstName = $this->faker->randomElement($firstNames);
@@ -249,24 +229,24 @@ class DatabaseSeeder extends Seeder
 
     private function createGrades()
     {
-        $gradingPeriods = ['CC1', 'CC2', 'CC3', 'Exam final'];
-        $evaluationTypes = ['Devoir', 'Contrôle', 'Examen', 'Projet'];
+        $gradingPeriods = ['CC1', 'CC2', 'Exam final']; // Reduced number of grading periods
         
         foreach ($this->students as $student) {
-            // For every subject, find the teacher assigned to the student's class
             foreach ($this->subjects as $subjectIndex => $subject) {
                 $classId = $student->class_id;
-                // Find the teacher assigned to this subject/class
                 $teacher = $this->teachers[$subjectIndex % count($this->teachers)];
-                // Create a grade for each grading period
+                
                 foreach ($gradingPeriods as $period) {
                     try {
+                        // Generate grade between 0 and 20 with exactly 2 decimal places
+                        $grade = number_format($this->faker->randomFloat(2, 0, 20), 2, '.', '');
+                        
                         Grade::create([
                             'student_id' => $student->id,
                             'teacher_id' => $teacher->id,
                             'subject_id' => $subject->id,
                             'academic_year_id' => $this->academicYears[0]->id,
-                            'grade' => round($this->faker->randomFloat(2, 0, 20), 2),
+                            'grade' => $grade,
                             'grading_period' => $period,
                             'created_at' => now(),
                             'updated_at' => now(),
