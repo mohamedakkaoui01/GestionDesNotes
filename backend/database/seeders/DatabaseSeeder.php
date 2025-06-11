@@ -45,8 +45,6 @@ class DatabaseSeeder extends Seeder
 
     private function createAcademicYears()
     {
-        $this->academicYears[] = AcademicYear::create(['label' => '2022-2023']);
-        $this->academicYears[] = AcademicYear::create(['label' => '2023-2024']);
         $this->academicYears[] = AcademicYear::create(['label' => '2024-2025']);
     }
 
@@ -167,42 +165,23 @@ class DatabaseSeeder extends Seeder
 
     private function assignSubjectsToTeachers()
     {
-        $subjectAssignments = [
-            0 => [0, 1],   // Pierre Dupont teaches Math and Physics
-            1 => [3, 4],   // Marie Martin teaches French and Philosophy
-            2 => [5, 6],   // Jean Durand teaches History and Civic Education
-            3 => [6, 7],   // Sophie Bernard teaches English and Spanish
-            4 => [2],      // Thomas Petit teaches SVT
-            5 => [9],      // Camille Robert teaches SES
-            6 => [8],      // Nicolas Richard teaches EPS
-            7 => [11, 12], // Laura Durand teaches Engineering and Computer Science
-        ];
-
-        foreach ($this->teachers as $teacherIndex => $teacher) {
-            if (isset($subjectAssignments[$teacherIndex])) {
-                foreach ($subjectAssignments[$teacherIndex] as $subjectIndex) {
-                    if (isset($this->subjects[$subjectIndex])) {
-                        foreach ($this->classes as $class) {
-                            // Only assign subjects to appropriate classes
-                            if ($this->isSubjectSuitableForClass($this->subjects[$subjectIndex], $class)) {
-                                // Check if any teacher is already assigned to this subject/class
-                                $alreadyAssigned = DB::table('teacher_subject')
-                                    ->where('subject_id', $this->subjects[$subjectIndex]->id)
-                                    ->where('class_id', $class->id)
-                                    ->exists();
-                                if ($alreadyAssigned) {
-                                    continue; // Skip if already assigned
-                                }
-                                try {
-                                    $teacher->subjects()->attach($this->subjects[$subjectIndex]->id, [
-                                        'class_id' => $class->id
-                                    ]);
-                                } catch (\Exception $e) {
-                                    // Skip if the relationship already exists
-                                    continue;
-                                }
-                            }
-                        }
+        // Assign every subject to every class, using teachers in round-robin
+        $teacherCount = count($this->teachers);
+        foreach ($this->subjects as $subjectIndex => $subject) {
+            foreach ($this->classes as $class) {
+                $teacher = $this->teachers[$subjectIndex % $teacherCount];
+                // Attach subject to teacher/class if not already assigned
+                $alreadyAssigned = \DB::table('teacher_subject')
+                    ->where('subject_id', $subject->id)
+                    ->where('class_id', $class->id)
+                    ->exists();
+                if (!$alreadyAssigned) {
+                    try {
+                        $teacher->subjects()->attach($subject->id, [
+                            'class_id' => $class->id
+                        ]);
+                    } catch (\Exception $e) {
+                        continue;
                     }
                 }
             }
@@ -274,33 +253,21 @@ class DatabaseSeeder extends Seeder
         $evaluationTypes = ['Devoir', 'Contrôle', 'Examen', 'Projet'];
         
         foreach ($this->students as $student) {
-            // Get all teachers/subjects assigned to the student's class
-            $classSubjects = [];
-            foreach ($this->teachers as $teacher) {
-                $teacherSubjects = $teacher->subjects()
-                    ->wherePivot('class_id', $student->class_id)
-                    ->get();
-                foreach ($teacherSubjects as $subject) {
-                    $classSubjects[] = [
-                        'subject' => $subject,
-                        'teacher' => $teacher
-                    ];
-                }
-            }
-            // Create 2-4 grades per subject per student
-            foreach ($classSubjects as $classSubject) {
-                $subject = $classSubject['subject'];
-                $teacher = $classSubject['teacher'];
-                $gradeCount = $this->faker->numberBetween(2, 4);
-                for ($i = 0; $i < $gradeCount; $i++) {
+            // For every subject, find the teacher assigned to the student's class
+            foreach ($this->subjects as $subjectIndex => $subject) {
+                $classId = $student->class_id;
+                // Find the teacher assigned to this subject/class
+                $teacher = $this->teachers[$subjectIndex % count($this->teachers)];
+                // Create a grade for each grading period
+                foreach ($gradingPeriods as $period) {
                     try {
                         Grade::create([
                             'student_id' => $student->id,
                             'teacher_id' => $teacher->id,
                             'subject_id' => $subject->id,
-                            'academic_year_id' => $this->academicYears[1]->id,
-                            'grade' => $this->faker->randomFloat(2, 0, 20),
-                            'grading_period' => $this->faker->randomElement($gradingPeriods),
+                            'academic_year_id' => $this->academicYears[0]->id,
+                            'grade' => round($this->faker->randomFloat(2, 0, 20), 2),
+                            'grading_period' => $period,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);

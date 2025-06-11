@@ -135,6 +135,7 @@ function Bulletin() {
           params: {
             student_id: selectedStudent,
             academic_year_id: selectedYear,
+            all: 1,
           },
         });
         // Fetch averages

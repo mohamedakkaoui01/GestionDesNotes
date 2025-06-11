@@ -42,24 +42,46 @@ class GradeController extends Controller
             $query->where('academic_year_id', $request->academic_year_id);
         }
         
-        $grades = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Filter by class_id (get all students in the class)
+        if ($request->has('class_id')) {
+            $studentIds = \App\Models\Student::where('class_id', $request->class_id)->pluck('id');
+            $query->whereIn('student_id', $studentIds);
+        }
         
-        // Map grades to include grading_period explicitly
-        $grades->getCollection()->transform(function ($grade) {
-            return [
-                'id' => $grade->id,
-                'student' => $grade->student,
-                'teacher' => $grade->teacher,
-                'subject' => $grade->subject,
-                'academic_year' => $grade->academicYear,
-                'grade' => $grade->grade,
-                'grading_period' => $grade->grading_period,
-                'created_at' => $grade->created_at,
-                'updated_at' => $grade->updated_at,
-            ];
-        });
-        
-        return response()->json($grades);
+        // Add support for ?all=1 to disable pagination
+        if ($request->has('all') && $request->all == 1) {
+            $grades = $query->orderBy('created_at', 'desc')->get();
+            $grades = $grades->map(function ($grade) {
+                return [
+                    'id' => $grade->id,
+                    'student' => $grade->student,
+                    'teacher' => $grade->teacher,
+                    'subject' => $grade->subject,
+                    'academic_year' => $grade->academicYear,
+                    'grade' => $grade->grade,
+                    'grading_period' => $grade->grading_period,
+                    'created_at' => $grade->created_at,
+                    'updated_at' => $grade->updated_at,
+                ];
+            });
+            return response()->json(['data' => $grades]);
+        } else {
+            $grades = $query->orderBy('created_at', 'desc')->paginate(15);
+            $grades->getCollection()->transform(function ($grade) {
+                return [
+                    'id' => $grade->id,
+                    'student' => $grade->student,
+                    'teacher' => $grade->teacher,
+                    'subject' => $grade->subject,
+                    'academic_year' => $grade->academicYear,
+                    'grade' => $grade->grade,
+                    'grading_period' => $grade->grading_period,
+                    'created_at' => $grade->created_at,
+                    'updated_at' => $grade->updated_at,
+                ];
+            });
+            return response()->json($grades);
+        }
     }
 
     //creer une nouvelle note.

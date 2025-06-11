@@ -106,7 +106,11 @@ function GradesManagement() {
   const fetchGradesAndBuildData = async (teacherIdParam) => {
     try {
       setLoading(true);
-      const teacherGrades = await api.getGrades({ teacher_id: teacherIdParam });
+      const params = { teacher_id: teacherIdParam, all: 1 };
+      if (selectedClassId) {
+        params.class_id = selectedClassId;
+      }
+      const teacherGrades = await api.getGrades(params);
 
       if (!Array.isArray(teacherGrades)) {
         throw new Error("Format de données invalide reçu du serveur.");
@@ -256,7 +260,7 @@ function GradesManagement() {
     if (teacherId) {
       fetchGradesAndBuildData(teacherId);
     }
-  }, [teacherId]);
+  }, [teacherId, selectedClassId]);
 
   // Group grades by student and subject
   const periods = ["CC1", "CC2", "CC3", "Exam final"];
@@ -477,8 +481,8 @@ function GradesManagement() {
                 value={formData.grade}
                 onChange={handleFormChange}
                 min="0"
-                max="20"
-                step="0.1"
+                max="14.99"
+                step="0.01"
                 required
                 disabled={isSubmitting}
               />
@@ -517,6 +521,17 @@ function GradesManagement() {
           className="grades-filters"
           style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
         >
+          <select
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+          >
+            <option value="">Toutes les classes</option>
+            {classes.map((classe) => (
+              <option key={classe.id} value={classe.id}>
+                {classe.name}
+              </option>
+            ))}
+          </select>
           <select
             value={filterSubject}
             onChange={(e) => setFilterSubject(e.target.value)}

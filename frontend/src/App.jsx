@@ -14,7 +14,6 @@ import StudentGrades from "./pages/Student/StudentGrades";
 // 👨‍🏫 Routes Enseignant
 import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
 import GradesManagement from "./pages/Teacher/GradesManagement";
-import BulletinScolaire from "./pages/Teacher/etudiants";
 
 // 👨‍💼 Routes Admin
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -45,7 +44,6 @@ function App() {
         <Route path="/enseignant" element={<Layout />}>
           <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="grades" element={<GradesManagement />} />
-          <Route path="students" element={<BulletinScolaire />} />
         </Route>
 
         {/* 👨‍🎓 Espace Étudiant */}

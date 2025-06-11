@@ -18,7 +18,6 @@ function Sidebar({ user, onLogout }) {
         return [
           { key: "dashboard", label: "Tableau de bord" },
           { key: "grades", label: "Gestion des notes" },
-          { key: "students", label: "Mes étudiants" },
         ];
       case "étudiant":
         return [

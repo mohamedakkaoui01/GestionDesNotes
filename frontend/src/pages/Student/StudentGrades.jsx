@@ -79,6 +79,7 @@ function StudentGrades() {
           params: {
             student_id: studentId,
             academic_year_id: selectedYear,
+            all: 1,
           },
         });
         // Fetch averages
