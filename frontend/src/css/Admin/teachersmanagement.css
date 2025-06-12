@@ -104,3 +104,94 @@
   color: #718096;
   font-size: 1.1rem;
 }
+
+/* Assignments Table Layout */
+.assignments-table-scroll {
+  overflow-x: auto;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.assignments-table {
+  width: 100%;
+  min-width: calc(
+    120px + 7 * 200px
+  ); /* 120px for sticky col, 200px per subject */
+  border-collapse: collapse;
+  background: white;
+  font-size: 15px;
+}
+
+.assignments-table th,
+.assignments-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: center;
+  white-space: normal;
+}
+
+.assignments-table th {
+  font-size: 20px;
+  font-weight: 800;
+  padding: 18px 12px;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+.assignments-table th:not(.sticky-col),
+.assignments-table td:not(.sticky-col) {
+  min-width: 200px;
+}
+
+.assignments-table th {
+  background: #f8f9fa;
+  color: var(--color-purple);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 16px;
+  padding: 10px 10px;
+}
+
+.assignments-table td {
+  background: white;
+}
+
+.assignments-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-purple);
+  cursor: pointer;
+}
+
+/* Remove old grid styles */
+.assignments-grid,
+.subject-group,
+.assignment-item,
+.disabled-hint {
+  display: none !important;
+}
+
+.assignments-table th.sticky-col,
+.assignments-table td.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #f8f9fa;
+  z-index: 2;
+  box-shadow: 2px 0 4px -2px #e2e8f0;
+  min-width: 120px;
+  text-align: left;
+}
+
+.assignments-table td.sticky-col {
+  background: white;
+  font-weight: 500;
+  color: var(--color-purple);
+}
+
+/* Column highlight on hover */
+.assignments-table td:hover,
+.assignments-table th:hover {
+  background: #f0eaff;
+}

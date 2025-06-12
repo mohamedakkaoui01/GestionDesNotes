@@ -1,16 +1,15 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiX,
-  FiSave,
-  FiUserPlus,
   FiCheckCircle,
   FiXCircle,
   FiAlertCircle,
   FiInfo,
+  FiX,
+  FiEdit,
+  FiTrash2,
+  FiPlus,
+  FiUserPlus,
 } from "react-icons/fi";
 import "../../css/Admin/teachersmanagement.css";
 
@@ -36,10 +35,7 @@ const FeedbackMessage = ({ type, message, onClose }) => {
   );
 };
 
-const API_URL = "http://localhost:8000/api";
-const ROLE_ENSEIGNANT = "enseignant";
-
-// Form component for adding/editing teachers
+// Teacher Form Component
 const TeacherForm = ({
   formData,
   onSubmit,
@@ -47,175 +43,185 @@ const TeacherForm = ({
   mode,
   subjects,
   classes,
+  existingAssignments,
   loading,
   onFormChange,
-}) => (
-  <div className="teacher-form-container">
-    <h3>
-      {mode === "add" ? "Ajouter un enseignant" : "Modifier l'enseignant"}
-    </h3>
-    <form onSubmit={onSubmit} className="teacher-form">
-      <div className="form-row">
-        <label>Nom complet</label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={(e) => {
-            const value = e.target.value;
-            // Generate email based on name
-            const email = value
-              ? value
-                  .toLowerCase()
-                  .normalize("NFD")
-                  .replace(/[\u0300-\u036f]/g, "")
-                  .replace(/[^a-z0-9\s-]/g, "")
-                  .trim()
-                  .replace(/\s+/g, ".")
-                  .replace(/\.+/g, ".")
-                  .replace(/\.?@/, "@")
-                  .replace(/[^a-z0-9@.-]/g, "")
-                  .replace(/^[^a-z0-9]|[^a-z0-9]$/g, "")
-                  .replace(/@.*$/, "")
-                  .substring(0, 30)
-                  .replace(/\.+$/, "") + "@school.ma"
-              : "";
+  currentTeacherModelId,
+}) => {
+  const [selectedAssignments, setSelectedAssignments] = useState(
+    formData.assignments || []
+  );
 
-            onFormChange(e);
-            onFormChange({
-              target: {
-                name: "email",
-                value: email,
-              },
-            });
-          }}
-          required
-          placeholder="Nom complet"
-        />
-      </div>
+  const handleAssignmentChange = (subjectId, classId, checked) => {
+    if (checked) {
+      setSelectedAssignments([
+        ...selectedAssignments,
+        { subject_id: subjectId, class_id: classId },
+      ]);
+    } else {
+      setSelectedAssignments(
+        selectedAssignments.filter(
+          (a) => !(a.subject_id === subjectId && a.class_id === classId)
+        )
+      );
+    }
+  };
 
-      <div className="form-row">
-        <label>Email</label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={onFormChange}
-          required
-          placeholder="email@example.com"
-        />
-      </div>
+  const isAssignmentDisabled = (subjectId, classId) => {
+    if (mode === "edit") return false;
+    return existingAssignments.some(
+      (a) => a.subject_id === subjectId && a.class_id === classId
+    );
+  };
 
-      <div className="form-row">
-        <label>Matières</label>
-        <div className="tm-subjects-scroll">
-          {subjects.map((subject) => (
-            <div key={subject.id} className="subject-checkbox">
-              <input
-                type="checkbox"
-                id={`subject-${subject.id}`}
-                name="subjects"
-                value={subject.id}
-                checked={formData.subjects.includes(subject.id)}
-                onChange={(e) => {
-                  const subjectId = parseInt(e.target.value);
-                  const newSubjects = e.target.checked
-                    ? [...formData.subjects, subjectId]
-                    : formData.subjects.filter((id) => id !== subjectId);
-                  onFormChange({
-                    target: {
-                      name: "subjects",
-                      value: newSubjects,
-                    },
-                  });
-                }}
-              />
-              <label htmlFor={`subject-${subject.id}`}>{subject.name}</label>
-            </div>
-          ))}
-        </div>
-      </div>
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({ ...formData, assignments: selectedAssignments });
+  };
 
-      <div className="form-row">
-        <label>Classes</label>
-        <div className="tm-classes-scroll">
-          {classes.map((cls) => (
-            <div key={cls.id} className="class-checkbox">
-              <input
-                type="checkbox"
-                id={`class-${cls.id}`}
-                name="classes"
-                value={cls.id}
-                checked={formData.classes.includes(cls.id)}
-                onChange={(e) => {
-                  const classId = parseInt(e.target.value);
-                  const newClasses = e.target.checked
-                    ? [...formData.classes, classId]
-                    : formData.classes.filter((id) => id !== classId);
-                  onFormChange({
-                    target: {
-                      name: "classes",
-                      value: newClasses,
-                    },
-                  });
-                }}
-              />
-              <label htmlFor={`class-${cls.id}`}>{cls.name}</label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {mode === "add" && (
+  // Table layout: columns = subjects, rows = classes
+  return (
+    <div className="form-container">
+      <form onSubmit={handleSubmit}>
         <div className="form-row">
-          <label>Mot de passe</label>
-          <div className="form-group">
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={onFormChange}
-              required={mode === "add"}
-              placeholder="••••••••"
-              minLength={8}
-              title="Le mot de passe doit contenir au moins 8 caractères"
-            />
-            <small className="form-text text-muted">
-              Le mot de passe doit contenir au moins 8 caractères
-            </small>
+          <label>Nom</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={onFormChange}
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={onFormChange}
+            required
+          />
+        </div>
+
+        {mode === "add" && (
+          <div className="form-row">
+            <label>Mot de passe</label>
+            <div className="form-group">
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={onFormChange}
+                required
+                minLength={8}
+                title="Le mot de passe doit contenir au moins 8 caractères"
+              />
+              <small className="form-text text-muted">
+                Le mot de passe doit contenir au moins 8 caractères
+              </small>
+            </div>
+          </div>
+        )}
+
+        <div className="form-row">
+          <label>Assignations (Matières/Classes)</label>
+          <div className="table-container assignments-table-scroll">
+            <table className="assignments-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col">Classe \\ Matière</th>
+                  {subjects.map((subject) => (
+                    <th key={subject.id} title={subject.name}>
+                      {subject.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {classes.map((cls) => (
+                  <tr key={cls.id}>
+                    <td className="sticky-col">{cls.name}</td>
+                    {subjects.map((subject) => {
+                      // Disable if assigned to another teacher (except current teacher in edit mode)
+                      const isAssignedToAnother = existingAssignments.some(
+                        (a) =>
+                          a.subject_id === subject.id &&
+                          a.class_id === cls.id &&
+                          a.teacher_id !== currentTeacherModelId
+                      );
+                      const isAssignedToCurrent = selectedAssignments.some(
+                        (a) =>
+                          a.subject_id === subject.id && a.class_id === cls.id
+                      );
+                      const checked = isAssignedToCurrent;
+                      // Disable if assigned to another teacher (except current teacher in edit mode)
+                      const disabled =
+                        mode === "edit"
+                          ? isAssignedToAnother && !isAssignedToCurrent
+                          : isAssignedToAnother;
+                      return (
+                        <td key={subject.id} style={{ textAlign: "center" }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              handleAssignmentChange(
+                                subject.id,
+                                cls.id,
+                                e.target.checked
+                              )
+                            }
+                            disabled={disabled}
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
 
-      <div className="form-actions">
-        <button
-          type="button"
-          className="cancel-button"
-          onClick={onCancel}
-          disabled={loading}
-        >
-          Annuler
-        </button>
-        {mode === "add" ? (
-          <button type="submit" className="add-button" disabled={loading}>
-            {loading ? "Ajout..." : "Ajouter"}
+        <div className="form-actions">
+          <button
+            type="button"
+            className="cancel-button"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            Annuler
           </button>
-        ) : (
-          <button type="submit" className="update-button" disabled={loading}>
-            {loading ? "Mise à jour..." : "Mettre à jour"}
-          </button>
-        )}
-      </div>
-    </form>
-  </div>
-);
+          {mode === "add" ? (
+            <button type="submit" className="add-button" disabled={loading}>
+              {loading ? "Ajout..." : "Ajouter"}
+            </button>
+          ) : (
+            <button type="submit" className="update-button" disabled={loading}>
+              {loading ? "Mise à jour..." : "Mettre à jour"}
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+};
 
-function TeachersManagement() {
+const TeachersManagement = () => {
   const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingAssignments, setExistingAssignments] = useState([]);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "Teacher@123",
+    assignments: [],
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [error, setError] = useState("");
   const [feedback, setFeedback] = useState({
     show: false,
     message: "",
@@ -223,61 +229,20 @@ function TeachersManagement() {
   });
   const feedbackTimeout = useRef(null);
   const [showForm, setShowForm] = useState(false);
-  const [formMode, setFormMode] = useState("add");
-  const [currentTeacherId, setCurrentTeacherId] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "Teacher@123",
-    subjects: [],
-    classes: [],
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load initial data
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        showFeedback("Vous devez être connecté.", "error");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const [teachersRes, subjectsRes, classesRes] = await Promise.all([
-          axios.get(`${API_URL}/users?role=${ROLE_ENSEIGNANT}&per_page=1000`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_URL}/subjects`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_URL}/classes`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        setTeachers(teachersRes.data.data || []);
-        setSubjects(subjectsRes.data || []);
-        setClasses(classesRes.data || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        showFeedback("Erreur lors du chargement des données.", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchTeachers();
+    fetchSubjects();
+    fetchClasses();
+    fetchExistingAssignments();
   }, []);
 
-  const showFeedback = (message, type = "info", duration = 5000) => {
+  const showFeedback = (message, type = "info", duration = 4000) => {
     if (feedbackTimeout.current) {
       clearTimeout(feedbackTimeout.current);
     }
-
     setFeedback({ show: true, message, type });
-
     feedbackTimeout.current = setTimeout(() => {
       setFeedback((prev) => ({ ...prev, show: false }));
     }, duration);
@@ -290,6 +255,65 @@ function TeachersManagement() {
     }
   };
 
+  const fetchTeachers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:8000/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { role: "enseignant" },
+      });
+      const teachersArray = Array.isArray(response.data)
+        ? response.data
+        : response.data.data;
+      setTeachers(teachersArray || []);
+    } catch (error) {
+      setError("Erreur lors du chargement des enseignants");
+      showFeedback("Erreur lors du chargement des enseignants", "error");
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:8000/api/subjects", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubjects(response.data);
+    } catch (error) {
+      setError("Erreur lors du chargement des matières");
+      showFeedback("Erreur lors du chargement des matières", "error");
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:8000/api/classes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setClasses(response.data);
+    } catch (error) {
+      setError("Erreur lors du chargement des classes");
+      showFeedback("Erreur lors du chargement des classes", "error");
+    }
+  };
+
+  const fetchExistingAssignments = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:8000/api/assignments",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setExistingAssignments(response.data);
+    } catch (error) {
+      setError("Erreur lors du chargement des assignations");
+      showFeedback("Erreur lors du chargement des assignations", "error");
+    }
+  };
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -298,186 +322,154 @@ function TeachersManagement() {
     }));
   };
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-
-    // Frontend validation
-    if (
-      !formData.name ||
-      !formData.email ||
-      (formMode === "add" && !formData.password)
-    ) {
-      showFeedback("Veuillez remplir tous les champs obligatoires.", "error");
-      return;
-    }
-    if (formData.subjects.length === 0 || formData.classes.length === 0) {
-      showFeedback(
-        "Veuillez sélectionner au moins une matière et une classe.",
-        "error"
-      );
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showFeedback("Vous devez être connecté.", "error");
-      return;
-    }
-
+  const handleSubmit = async (formData) => {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      const isEdit = formMode === "edit";
-
-      // First, create/update the user
-      const userData = {
-        name: formData.name,
-        email: formData.email,
-        role: ROLE_ENSEIGNANT,
-        ...(formData.password && { password: formData.password }),
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       };
 
-      let userId;
-      let teacherId;
-      if (isEdit) {
-        await axios.put(`${API_URL}/users/${currentTeacherId}`, userData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        userId = currentTeacherId;
-        // Fetch teacher entity for edit as well
-        const teacherDetails = await axios.get(`${API_URL}/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        teacherId = teacherDetails.data.teacher?.id || userId;
-      } else {
-        const response = await axios.post(`${API_URL}/users`, userData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        userId = response.data.user.id;
-        // Fetch teacher entity to get teacher.id
-        const teacherDetails = await axios.get(`${API_URL}/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        teacherId = teacherDetails.data.teacher?.id || userId;
-      }
+      let teacherModelId;
 
-      // Then, handle assignments
-      const assignments = [];
-      for (const subjectId of formData.subjects) {
-        for (const classId of formData.classes) {
-          assignments.push({
-            teacher_id: teacherId,
-            subject_id: subjectId,
-            class_id: classId,
-          });
+      if (editingId) {
+        // 1. Get teacher model ID from user
+        const userResponse = await axios.get(
+          `http://localhost:8000/api/users/${editingId}`,
+          { headers }
+        );
+        teacherModelId = userResponse.data.teacher.id;
+
+        // 2. Update teacher info
+        await axios.put(
+          `http://localhost:8000/api/users/${editingId}`,
+          {
+            name: formData.name,
+            email: formData.email,
+            role: "enseignant",
+          },
+          { headers }
+        );
+      } else {
+        // 1. Create new teacher (user)
+        const teacherResponse = await axios.post(
+          "http://localhost:8000/api/users",
+          {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            role: "enseignant",
+          },
+          { headers }
+        );
+        // 2. Get teacher model ID from response or fetch if missing
+        if (
+          teacherResponse.data.user &&
+          teacherResponse.data.user.teacher &&
+          teacherResponse.data.user.teacher.id
+        ) {
+          teacherModelId = teacherResponse.data.user.teacher.id;
+        } else {
+          // Fetch user details to get teacher model ID
+          const userId = teacherResponse.data.user.id;
+          const userDetails = await axios.get(
+            `http://localhost:8000/api/users/${userId}`,
+            { headers }
+          );
+          teacherModelId = userDetails.data.teacher.id;
         }
       }
 
-      // Create assignments
-      if (assignments.length > 0) {
+      // 3. Prepare assignments with teacher_id
+      const assignmentsWithTeacherId = (formData.assignments || []).map(
+        (a) => ({
+          ...a,
+          teacher_id: teacherModelId,
+        })
+      );
+
+      // 4. Send batch assignment only if there are assignments
+      if (assignmentsWithTeacherId.length > 0) {
         await axios.post(
-          `${API_URL}/assignments/batch`,
-          { assignments },
+          "http://localhost:8000/api/assignments/batch",
           {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+            assignments: assignmentsWithTeacherId,
+          },
+          { headers }
         );
       }
 
       showFeedback(
-        isEdit
-          ? "Enseignant mis à jour avec succès"
+        editingId
+          ? "Enseignant modifié avec succès"
           : "Enseignant ajouté avec succès",
         "success"
       );
 
-      // Refresh the teachers list
-      const response = await axios.get(
-        `${API_URL}/users?role=${ROLE_ENSEIGNANT}&per_page=1000`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setTeachers(response.data.data || []);
-
-      // Reset form
       setFormData({
         name: "",
         email: "",
         password: "Teacher@123",
-        subjects: [],
-        classes: [],
+        assignments: [],
       });
+      setEditingId(null);
       setShowForm(false);
-      setFormMode("add");
-      setCurrentTeacherId(null);
+      fetchTeachers();
+      fetchExistingAssignments();
     } catch (error) {
-      let backendMsg =
-        error.response?.data?.message || error.response?.data?.error;
-      // Handle batch assignment errors (array)
-      if (
-        error.response?.data?.errors &&
-        Array.isArray(error.response.data.errors)
-      ) {
-        backendMsg += "\n" + error.response.data.errors.join("\n");
-      }
-      if (
-        !backendMsg &&
-        error.response?.data &&
-        typeof error.response.data === "object"
-      ) {
-        // Try to extract first error from validation errors
-        const firstKey = Object.keys(error.response.data)[0];
-        backendMsg = error.response.data[firstKey];
-        if (Array.isArray(backendMsg)) backendMsg = backendMsg[0];
-      }
-      showFeedback(
-        `Erreur: ${backendMsg || error.message || "Une erreur est survenue"}`,
-        "error"
-      );
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Erreur lors de l'enregistrement de l'enseignant";
+      setError(errorMessage);
+      showFeedback(errorMessage, "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEdit = async (teacher) => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      // Fetch the teacher entity to get the real teacher.id
-      const userDetails = await axios.get(`${API_URL}/users/${teacher.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const teacherId = userDetails.data.teacher?.id || teacher.id;
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
 
-      // Now fetch assignments using the correct teacherId
+      // 1. Get teacher model ID from user
+      const userResponse = await axios.get(
+        `http://localhost:8000/api/users/${teacher.id}`,
+        { headers }
+      );
+      const teacherModelId = userResponse.data.teacher.id;
+
+      // 2. Get assignments using teacher model ID
       const response = await axios.get(
-        `${API_URL}/teachers/${teacherId}/subjects`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        `http://localhost:8000/api/teachers/${teacherModelId}/subjects`,
+        { headers }
       );
 
-      const assignments = response.data.assignments || [];
-      const subjects = assignments.map((a) => a.subject.id);
-      const classes = assignments.flatMap((a) => a.classes.map((c) => c.id));
+      // 3. Flatten assignments as before
+      const assignments = [];
+      (response.data.assignments || []).forEach((assignment) => {
+        const subjectId = assignment.subject.id;
+        (assignment.classes || []).forEach((cls) => {
+          assignments.push({
+            subject_id: subjectId,
+            class_id: cls.id,
+          });
+        });
+      });
 
-      setFormMode("edit");
-      setCurrentTeacherId(teacher.id);
       setFormData({
         name: teacher.name,
         email: teacher.email,
-        subjects,
-        classes,
+        assignments,
       });
+      setEditingId(teacher.id);
       setShowForm(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
-      console.error("Error loading teacher details:", error);
-      showFeedback(
-        "Erreur lors du chargement des détails de l'enseignant.",
-        "error"
-      );
+      showFeedback("Erreur lors du chargement des assignations", "error");
     }
   };
 
@@ -490,27 +482,22 @@ function TeachersManagement() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showFeedback("Vous devez être connecté.", "error");
-      return;
-    }
-
     try {
-      await axios.delete(`${API_URL}/users/${teacherId}`, {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:8000/api/users/${teacherId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      setTeachers((prev) => prev.filter((t) => t.id !== teacherId));
       showFeedback("Enseignant supprimé avec succès", "success");
+      fetchTeachers();
+      fetchExistingAssignments();
     } catch (error) {
-      console.error("Error deleting teacher:", error);
-      showFeedback("Erreur lors de la suppression de l'enseignant.", "error");
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la suppression de l'enseignant";
+      setError(errorMessage);
+      showFeedback(errorMessage, "error");
     }
   };
-
-  if (loading)
-    return <div className="loading-message">Chargement en cours...</div>;
 
   return (
     <div className="teachers-management">
@@ -522,8 +509,9 @@ function TeachersManagement() {
             onClose={hideFeedback}
           />
         )}
+
         <div className="page-header">
-          <h2 className="page-header">Gestion des Enseignants</h2>
+          <h2>Gestion des Enseignants</h2>
           {!showForm && (
             <button
               className="ajouter-toggle-button"
@@ -535,36 +523,48 @@ function TeachersManagement() {
         </div>
 
         {showForm && (
-          <div className="form-section">
-            <TeacherForm
-              formData={formData}
-              onSubmit={handleFormSubmit}
-              onCancel={() => {
-                setShowForm(false);
-                setFormMode("add");
-                setCurrentTeacherId(null);
-                setFormData({
-                  name: "",
-                  email: "",
-                  password: "Teacher@123",
-                  subjects: [],
-                  classes: [],
-                });
-              }}
-              onFormChange={handleFormChange}
-              mode={formMode}
-              subjects={subjects}
-              classes={classes}
-              loading={isSubmitting}
-            />
-          </div>
+          <TeacherForm
+            formData={formData}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingId(null);
+              setFormData({
+                name: "",
+                email: "",
+                password: "Teacher@123",
+                assignments: [],
+              });
+            }}
+            mode={editingId ? "edit" : "add"}
+            subjects={subjects}
+            classes={classes}
+            existingAssignments={existingAssignments}
+            loading={isSubmitting}
+            onFormChange={handleFormChange}
+            currentTeacherModelId={
+              editingId
+                ? (() => {
+                    // Find teacher model ID for the current editing user
+                    // We fetch it in handleEdit and store it in formData._teacherModelId if needed
+                    if (formData._teacherModelId)
+                      return formData._teacherModelId;
+                    // Fallback: try to find in existingAssignments
+                    const found = existingAssignments.find(
+                      (a) =>
+                        a.teacher_id && teachers.find((t) => t.id === editingId)
+                    );
+                    return found ? found.teacher_id : null;
+                  })()
+                : null
+            }
+          />
         )}
 
+        {error && <div className="error-message">{error}</div>}
+
         <div className="table-container">
-          <p className="total-count">
-            {`${teachers.length} enseignant(s) trouvé(s)`}
-          </p>
-          <table className="teachers-table">
+          <table>
             <thead>
               <tr>
                 <th>Nom</th>
@@ -577,18 +577,18 @@ function TeachersManagement() {
                 <tr key={teacher.id}>
                   <td>{teacher.name}</td>
                   <td>{teacher.email}</td>
-                  <td className="actions-cell">
+                  <td className="action-buttons">
                     <button
-                      onClick={() => handleEdit(teacher)}
                       className="icon-btn-small modify"
                       title="Modifier"
+                      onClick={() => handleEdit(teacher)}
                     >
                       <FiEdit />
                     </button>
                     <button
                       className="icon-btn-small delete"
-                      onClick={() => handleDelete(teacher.id, teacher.name)}
                       title="Supprimer"
+                      onClick={() => handleDelete(teacher.id, teacher.name)}
                     >
                       <FiTrash2 />
                     </button>
@@ -601,6 +601,6 @@ function TeachersManagement() {
       </div>
     </div>
   );
-}
+};
 
 export default TeachersManagement;

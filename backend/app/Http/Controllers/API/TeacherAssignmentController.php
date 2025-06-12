@@ -234,10 +234,11 @@ class TeacherAssignmentController extends Controller
                 })->toArray();
 
             foreach ($teacherAssignments as $a) {
-                // Check if any teacher is already assigned to this subject in this class
+                // Check if any other teacher is already assigned to this subject in this class
                 $alreadyAssigned = DB::table('teacher_subject')
                     ->where('subject_id', $a['subject_id'])
                     ->where('class_id', $a['class_id'])
+                    ->where('teacher_id', '!=', $teacherId)
                     ->exists();
                 if ($alreadyAssigned) {
                     $errors[] = 'Cette matière est déjà enseignée dans une autre classe';
